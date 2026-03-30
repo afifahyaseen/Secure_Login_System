@@ -54,11 +54,11 @@ cd secure-logging-system
 ```bash
 python -m venv venv
  ```
-# Windows
+### Windows
  ```
 venv\Scripts\activate
  ```
-# macOS / Linux
+### macOS / Linux
  ```
 source venv/bin/activate
  ```
@@ -78,7 +78,9 @@ python setup.py
 Username: admin
 Password: admin123
 ⚠️ IMPORTANT: Change this password immediately in production!
+
 ##  Project Structure
+
 secure-login-system/ssd
 ├── app.py                    # Main Flask application
 ├── requirements.txt          # Python dependencies
@@ -90,10 +92,15 @@ secure-login-system/ssd
 │   ├── user_login.html
 │   └── user_register.html
 └── secure_logging.db         # Database (auto-generated)
+
 <img width="847" height="590" alt="image" src="https://github.com/user-attachments/assets/e65e3bf2-004e-496f-8ba7-7a68964f4379" />
+
 <img width="910" height="338" alt="image" src="https://github.com/user-attachments/assets/a682bf4c-690d-48b5-ab33-2d6a41ba8ac1" />
-<img width="492" height="377" alt="image" src="https://github.com/user-attachments/assets/da8be9dd-e9d1-457f-87d5-dfcbd1312726" />
-<img width="1783" height="851" alt="image" src="https://github.com/user-attachments/assets/a44fcbe1-cc3b-442e-8309-7dca78b94075" />
+
+<img width="1159" height="648" alt="image" src="https://github.com/user-attachments/assets/b61e1829-e6aa-4a7e-adad-d58e5e4becaf" />
+
+<img width="1513" height="880" alt="image" src="https://github.com/user-attachments/assets/6a2187b1-2949-40ed-8f10-36491286a200" />
+
 
 ##  Project Purpose
 This project was developed as a Secure Software Design academic project to demonstrate:
