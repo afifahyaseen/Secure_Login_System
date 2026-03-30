@@ -74,10 +74,10 @@ python setup.py
  ```bash
  python app.py
  ```
-🔑 Default Admin Credentials
+### 🔑 Default Admin Credentials
 Username: admin
 Password: admin123
-⚠️ IMPORTANT: Change this password immediately in production!
+### ⚠️ IMPORTANT: Change this password immediately in production!
 
 ##  Project Structure
 
