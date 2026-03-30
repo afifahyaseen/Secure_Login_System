@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration - Secure Logging System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-effect { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="glass-effect rounded-2xl shadow-2xl p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <i class="fas fa-user-plus text-6xl text-white mb-4"></i>
+            <h1 class="text-3xl font-bold text-white mb-2">Create Account</h1>
+            <p class="text-gray-200">Join Secure Logging System</p>
+        </div>
+        
+        <form id="registerForm" class="space-y-6">
+            <div>
+                <label class="block text-white mb-2"><i class="fas fa-user mr-2"></i>Username</label>
+                <input type="text" id="username" required
+                       class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:border-white"
+                       placeholder="Choose a username">
+            </div>
+            
+            <div>
+                <label class="block text-white mb-2"><i class="fas fa-envelope mr-2"></i>Email</label>
+                <input type="email" id="email" required
+                       class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:border-white"
+                       placeholder="Enter your email">
+            </div>
+            
+            <div>
+                <label class="block text-white mb-2"><i class="fas fa-lock mr-2"></i>Password</label>
+                <input type="password" id="password" required minlength="8"
+                       class="w-full bg-white bg-opacity-20 border border-white border-opacity-30 rounded-lg px-4 py-3 text-white placeholder-gray-300 focus:outline-none focus:border-white"
+                       placeholder="Minimum 8 characters">
+            </div>
+            
+            <button type="submit" class="w-full bg-white text-purple-600 font-bold py-3 rounded-lg hover:bg-gray-100 transition">
+                <i class="fas fa-user-plus mr-2"></i>Register
+            </button>
+        </form>
+        
+        <div id="error-message" class="mt-4 p-3 bg-red-500 bg-opacity-80 text-white rounded-lg hidden"></div>
+        <div id="success-message" class="mt-4 p-3 bg-green-500 bg-opacity-80 text-white rounded-lg hidden"></div>
+        
+        <div class="mt-6 text-center">
+            <p class="text-white text-sm">
+                Already have an account? 
+                <a href="/user/login" class="text-yellow-300 hover:underline">Login here</a>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+            
+            if (password.length < 8) {
+                errorDiv.textContent = 'Password must be at least 8 characters long';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    if (response.status === 429) {
+                        errorDiv.textContent = 'Too many registration attempts! Please wait 1 minute before trying again.';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+                    throw new Error('Server returned invalid response');
+                }
+                
+                if (response.ok) {
+                    successDiv.textContent = 'Registration successful! Redirecting to login...';
+                    successDiv.classList.remove('hidden');
+                    setTimeout(() => {
+                        window.location.href = '/user/login';
+                    }, 2000);
+                } else if (response.status === 429) {
+                    errorDiv.textContent = data.message || 'Too many registration attempts! Please wait 1 minute before trying again.';
+                    errorDiv.classList.remove('hidden');
+                } else {
+                    errorDiv.textContent = data.error || data.message || 'Registration failed';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

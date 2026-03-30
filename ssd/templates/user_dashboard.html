@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Secure Logging System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <nav class="gradient-bg shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-user-shield text-3xl"></i>
+                    <h1 class="text-2xl font-bold">User Dashboard</h1>
+                </div>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mx-auto px-6 py-8">
+        <div class="bg-gray-800 rounded-xl p-8 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Welcome to Secure Logging System</h2>
+            <div id="user-info" class="space-y-4">
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <p class="text-gray-400 mb-2">Username</p>
+                    <p class="text-xl font-semibold" id="username-display">Loading...</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <p class="text-gray-400 mb-2">Email</p>
+                    <p class="text-xl font-semibold" id="email-display">Loading...</p>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <p class="text-gray-400 mb-2">Account Status</p>
+                    <p class="text-xl font-semibold text-green-400" id="status-display">Active</p>
+                </div>
+            </div>
+            <div class="mt-8 p-4 bg-blue-900 bg-opacity-30 rounded-lg">
+                <p class="text-sm text-gray-300">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Your account is protected by our secure logging system. 
+                    Multiple failed login attempts may result in temporary blocking.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            window.location.href = '/user/login';
+        }
+
+        // First, try to use stored values from login for instant display
+        const storedUsername = localStorage.getItem('user_username');
+        const storedEmail = localStorage.getItem('user_email');
+        if (storedUsername) {
+            document.getElementById('username-display').textContent = storedUsername;
+        }
+        if (storedEmail) {
+            document.getElementById('email-display').textContent = storedEmail;
+        }
+
+        // Then, refresh from backend (authoritative source)
+        fetch('/api/me', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        })
+        .then(res => {
+            if (res.status === 401) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/user/login';
+                return null;
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (!data || !data.user) return;
+            const user = data.user;
+            document.getElementById('username-display').textContent = user.username;
+            document.getElementById('email-display').textContent = user.email;
+            if (user.is_blocked) {
+                document.getElementById('status-display').textContent = 'Blocked';
+                document.getElementById('status-display').classList.remove('text-green-400');
+                document.getElementById('status-display').classList.add('text-red-400');
+            } else {
+                document.getElementById('status-display').textContent = 'Active';
+                document.getElementById('status-display').classList.add('text-green-400');
+            }
+        })
+        .catch(err => {
+            console.error('Error loading user info:', err);
+            // Keep the stored values, but require re-login for security
+            localStorage.removeItem('access_token');
+            window.location.href = '/user/login';
+        });
+        
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/user/login';
+        }
+    </script>
+</body>
+</html>

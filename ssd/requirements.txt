@@ -1,0 +1,27 @@
+# Secure Logging System - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Flask web framework
+Flask==3.0.0
+
+# Database ORM
+Flask-SQLAlchemy==3.1.1
+
+# Rate limiting to prevent credential stuffing
+Flask-Limiter==3.5.0
+
+# JWT token generation for secure authentication
+Flask-JWT-Extended==4.6.0
+
+# Password hashing (never store plain text passwords!)
+Werkzeug==3.0.1
+
+# Two-factor authentication (TOTP)
+pyotp==2.9.0
+
+# QR code generation for 2FA setup
+qrcode[pil]==7.4.2
+
+# Additional utilities
+python-dateutil==2.8.2
+

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Secure Logging System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .tab-button { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-shield-alt text-3xl"></i>
+                    <h1 class="text-2xl font-bold">Admin Dashboard - Secure Logging System</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="current-time" class="text-sm"></span>
+                    <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-6 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Total Users</p>
+                        <h3 class="text-3xl font-bold text-blue-400" id="stat-total-users">0</h3>
+                        <p class="text-green-400 text-sm mt-2"><i class="fas fa-arrow-up"></i> <span id="stat-new-users">0</span> new today</p>
+                    </div>
+                    <i class="fas fa-users text-4xl text-blue-400 opacity-50"></i>
+                </div>
+            </div>
+
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Blocked Users</p>
+                        <h3 class="text-3xl font-bold text-red-400" id="stat-blocked-users">0</h3>
+                        <p class="text-red-400 text-sm mt-2">Due to suspicious activity</p>
+                    </div>
+                    <i class="fas fa-ban text-4xl text-red-400 opacity-50"></i>
+                </div>
+            </div>
+
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Login Attempts</p>
+                        <h3 class="text-3xl font-bold text-purple-400" id="stat-total-attempts">0</h3>
+                        <p class="text-yellow-400 text-sm mt-2"><span id="stat-success-rate">0</span>% success rate</p>
+                    </div>
+                    <i class="fas fa-sign-in-alt text-4xl text-purple-400 opacity-50"></i>
+                </div>
+            </div>
+
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1">Anomalies</p>
+                        <h3 class="text-3xl font-bold text-orange-400" id="stat-total-anomalies">0</h3>
+                        <p class="text-red-400 text-sm mt-2"><span id="stat-critical-anomalies">0</span> critical</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-4xl text-orange-400 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-chart-line mr-2"></i>Login Attempts Trend</h2>
+                <canvas id="loginChart" height="200"></canvas>
+            </div>
+            <div class="card bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-chart-pie mr-2"></i>Anomaly Types</h2>
+                <canvas id="anomalyChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="flex space-x-4 border-b border-gray-700">
+                <button id="tab-users" class="tab-button px-6 py-3 font-semibold border-b-2 border-blue-500 text-blue-400" onclick="showTab('users')">Users</button>
+                <button id="tab-attempts" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-400" onclick="showTab('attempts')">Login Attempts</button>
+                <button id="tab-anomalies" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-400" onclick="showTab('anomalies')">Anomalies</button>
+                <button id="tab-patterns" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-400" onclick="showTab('patterns')">Anomaly Patterns</button>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="content-users" class="tab-content">
+            <div class="bg-gray-800 rounded-xl p-6 overflow-x-auto">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-users mr-2"></i>Registered Users Database</h2>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="px-4 py-3 text-left">ID</th>
+                            <th class="px-4 py-3 text-left">Username</th>
+                            <th class="px-4 py-3 text-left">Email</th>
+                            <th class="px-4 py-3 text-left">Status</th>
+                            <th class="px-4 py-3 text-left">Failed Logins</th>
+                            <th class="px-4 py-3 text-left">Registered</th>
+                            <th class="px-4 py-3 text-left">Last Login</th>
+                            <th class="px-4 py-3 text-left">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <tr><td colspan="8" class="text-center py-8 text-gray-400">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Login Attempts Tab -->
+        <div id="content-attempts" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-xl p-6 overflow-x-auto">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-history mr-2"></i>Recent Login Attempts</h2>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="px-4 py-3 text-left">Username</th>
+                            <th class="px-4 py-3 text-left">IP Address</th>
+                            <th class="px-4 py-3 text-left">Status</th>
+                            <th class="px-4 py-3 text-left">Reason</th>
+                            <th class="px-4 py-3 text-left">Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attempts-table-body">
+                        <tr><td colspan="5" class="text-center py-8 text-gray-400">Loading login attempts...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Anomalies Tab -->
+        <div id="content-anomalies" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-exclamation-triangle mr-2"></i>Detected Anomalies</h2>
+                <div id="anomalies-container" class="space-y-4">
+                    <p class="text-center py-8 text-gray-400">Loading anomalies...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anomaly Patterns Tab -->
+        <div id="content-patterns" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4"><i class="fas fa-network-wired mr-2"></i>Anomaly Patterns by IP</h2>
+                <div id="patterns-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <p class="text-center py-8 text-gray-400 col-span-full">Loading anomaly patterns...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            window.location.href = '/admin/login';
+        }
+
+        const charts = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+
+            initializeCharts();
+            loadDashboardStats();
+            loadUsers();
+            loadLoginAttempts();
+            loadAnomalies();
+            loadAnomalyPatterns();
+
+            setInterval(() => {
+                loadDashboardStats();
+                loadUsers();
+                loadLoginAttempts();
+                loadAnomalies();
+                loadAnomalyPatterns();
+            }, 10000);
+        });
+
+        function updateCurrentTime() {
+            document.getElementById('current-time').textContent = new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(b => {
+                b.classList.remove('border-blue-500', 'text-blue-400');
+                b.classList.add('border-transparent', 'text-gray-400');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const btn = document.getElementById(`tab-${tabName}`);
+            btn.classList.remove('border-transparent', 'text-gray-400');
+            btn.classList.add('border-blue-500', 'text-blue-400');
+        }
+
+        function initializeCharts() {
+            const loginCtx = document.getElementById('loginChart').getContext('2d');
+            charts.login = new Chart(loginCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Successful', data: [], borderColor: 'rgb(34, 197, 94)', backgroundColor: 'rgba(34, 197, 94, 0.2)', tension: 0.4 },
+                        { label: 'Failed', data: [], borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.2)', tension: 0.4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#fff' } } },
+                    scales: { 
+                        x: { ticks: { color: '#9ca3af' } },
+                        y: { ticks: { color: '#9ca3af' }, beginAtZero: true }
+                    }
+                }
+            });
+
+            const anomalyCtx = document.getElementById('anomalyChart').getContext('2d');
+            charts.anomaly = new Chart(anomalyCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } }
+                }
+            });
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+
+                document.getElementById('stat-total-users').textContent = data.users.total || 0;
+                document.getElementById('stat-new-users').textContent = data.users.new_today || 0;
+                document.getElementById('stat-blocked-users').textContent = data.users.blocked || 0;
+                document.getElementById('stat-total-attempts').textContent = data.login_attempts.total || 0;
+                document.getElementById('stat-success-rate').textContent = data.login_attempts.success_rate || 0;
+                document.getElementById('stat-total-anomalies').textContent = data.anomalies.total || 0;
+                document.getElementById('stat-critical-anomalies').textContent = data.anomalies.critical || 0;
+            } catch (err) {
+                console.error('Error loading stats:', err);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/dashboard/users', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const tbody = document.getElementById('users-table-body');
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">No users registered yet</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.users.map(user => `
+                    <tr class="border-b border-gray-700 hover:bg-gray-700">
+                        <td class="px-4 py-3">${user.id}</td>
+                        <td class="px-4 py-3">${user.username}</td>
+                        <td class="px-4 py-3">${user.email}</td>
+                        <td class="px-4 py-3">${user.is_blocked ? '<span class="text-red-400">Blocked</span>' : '<span class="text-green-400">Active</span>'}</td>
+                        <td class="px-4 py-3">${user.failed_login_count || 0}</td>
+                        <td class="px-4 py-3">${new Date(user.created_at).toLocaleString('en-US', { timeZone: 'Asia/Karachi' })}</td>
+                        <td class="px-4 py-3">${user.last_login ? new Date(user.last_login).toLocaleString('en-US', { timeZone: 'Asia/Karachi' }) : 'Never'}</td>
+                        <td class="px-4 py-3">
+                            <button onclick="${user.is_blocked ? 'unblockUser' : 'blockUser'}(${user.id})" class="bg-${user.is_blocked ? 'green' : 'red'}-600 hover:bg-${user.is_blocked ? 'green' : 'red'}-700 px-3 py-1 rounded text-xs mr-2">
+                                ${user.is_blocked ? 'Unblock' : 'Block'}
+                            </button>
+                            <button onclick="viewUserBehavior(${user.id})" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading users:', err);
+                document.getElementById('users-table-body').innerHTML = '<tr><td colspan="8" class="text-center py-8 text-red-400">Error loading users</td></tr>';
+            }
+        }
+
+        async function loadLoginAttempts() {
+            try {
+                const response = await fetch('/api/dashboard/login-attempts?limit=100', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const tbody = document.getElementById('attempts-table-body');
+                if (!data.login_attempts || data.login_attempts.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">No login attempts yet</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.login_attempts.map(attempt => `
+                    <tr class="border-b border-gray-700 hover:bg-gray-700">
+                        <td class="px-4 py-3">${attempt.username}</td>
+                        <td class="px-4 py-3">${attempt.ip_address}</td>
+                        <td class="px-4 py-3">${attempt.success ? '<span class="text-green-400">Success</span>' : '<span class="text-red-400">Failed</span>'}</td>
+                        <td class="px-4 py-3">${attempt.failure_reason || '-'}</td>
+                        <td class="px-4 py-3">${new Date(attempt.timestamp).toLocaleString('en-US', { timeZone: 'Asia/Karachi' })}</td>
+                    </tr>
+                `).join('');
+
+                updateLoginTrendChart(data.login_attempts);
+            } catch (err) {
+                console.error('Error loading login attempts:', err);
+            }
+        }
+
+        async function loadAnomalies() {
+            try {
+                const response = await fetch('/api/dashboard/anomalies?limit=50', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const container = document.getElementById('anomalies-container');
+                if (!data.anomalies || data.anomalies.length === 0) {
+                    container.innerHTML = '<p class="text-center py-8 text-gray-400">No anomalies detected</p>';
+                    return;
+                }
+                container.innerHTML = data.anomalies.map(anomaly => {
+                    const severityColor = {
+                        'critical': 'bg-red-600',
+                        'high': 'bg-orange-600',
+                        'medium': 'bg-yellow-600',
+                        'low': 'bg-blue-600'
+                    }[anomaly.severity] || 'bg-gray-600';
+                    return `
+                        <div class="bg-gray-700 rounded-lg p-4 border-l-4 ${severityColor}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="${severityColor} text-white px-3 py-1 rounded text-sm font-bold">${anomaly.severity.toUpperCase()}</span>
+                                    <span class="ml-3 text-gray-300">${anomaly.type}</span>
+                                    <span class="ml-3 text-gray-500 text-sm">${new Date(anomaly.detected_at).toLocaleString('en-US', { timeZone: 'Asia/Karachi' })}</span>
+                                    <p class="mt-2 text-white">${anomaly.description}</p>
+                                    <p class="mt-1 text-sm text-gray-400">IP: ${anomaly.ip_address}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                updateAnomalyTypesChart(data.anomalies);
+            } catch (err) {
+                console.error('Error loading anomalies:', err);
+            }
+        }
+
+        async function loadAnomalyPatterns() {
+            try {
+                const response = await fetch('/api/dashboard/anomaly-patterns', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (!response.ok) return;
+                const data = await response.json();
+                const container = document.getElementById('patterns-container');
+                if (!data.patterns || data.patterns.length === 0) {
+                    container.innerHTML = '<p class="text-center py-8 text-gray-400 col-span-full">No anomaly patterns detected</p>';
+                    return;
+                }
+                container.innerHTML = data.patterns.map(pattern => `
+                    <div class="bg-gray-700 rounded-lg p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-red-400">${pattern.ip_address}</h3>
+                            <span class="text-2xl font-bold text-orange-400">${pattern.anomaly_count}</span>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <p class="text-gray-400 mb-1">Types:</p>
+                                ${Object.entries(pattern.types || {}).map(([type, count]) => `
+                                    <div class="flex justify-between">
+                                        <span>${type}</span>
+                                        <span class="text-yellow-400">${count}</span>
+                                    </div>
+                                `).join('') || '<span class="text-gray-500">None</span>'}
+                            </div>
+                            <div>
+                                <p class="text-gray-400 mb-1">Severities:</p>
+                                ${Object.entries(pattern.severities || {}).map(([sev, count]) => `
+                                    <div class="flex justify-between">
+                                        <span>${sev}</span>
+                                        <span class="text-red-400">${count}</span>
+                                    </div>
+                                `).join('') || '<span class="text-gray-500">None</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading patterns:', err);
+            }
+        }
+
+        function updateLoginTrendChart(attempts) {
+            const groupedData = {};
+            attempts.forEach(attempt => {
+                const date = new Date(attempt.timestamp).toLocaleDateString('en-US', { timeZone: 'Asia/Karachi' });
+                if (!groupedData[date]) {
+                    groupedData[date] = { successful: 0, failed: 0 };
+                }
+                if (attempt.success) groupedData[date].successful++;
+                else groupedData[date].failed++;
+            });
+
+            const labels = Object.keys(groupedData).sort();
+            const successfulData = labels.map(d => groupedData[d].successful);
+            const failedData = labels.map(d => groupedData[d].failed);
+
+            charts.login.data.labels = labels;
+            charts.login.data.datasets[0].data = successfulData;
+            charts.login.data.datasets[1].data = failedData;
+            charts.login.update();
+        }
+
+        function updateAnomalyTypesChart(anomalies) {
+            const count = { critical: 0, high: 0, medium: 0, low: 0 };
+            anomalies.forEach(a => count[a.severity]++);
+            charts.anomaly.data.datasets[0].data = [count.critical, count.high, count.medium, count.low];
+            charts.anomaly.update();
+        }
+
+        // Fixed Block/Unblock Functions
+        async function blockUser(userId) {
+            if (!confirm('Block this user?')) return;
+            try {
+                const response = await fetch('/api/admin/block-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ user_id: userId, reason: 'Too many failed logins' })
+                });
+                if (response.ok) {
+                    alert('User blocked');
+                    loadUsers();
+                    loadDashboardStats();
+                } else {
+                    alert('Failed to block user');
+                }
+            } catch (err) {
+                alert('Error');
+            }
+        }
+
+        async function unblockUser(userId) {
+            if (!confirm('Unblock this user?')) return;
+            try {
+                const response = await fetch('/api/admin/unblock-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                });
+                if (response.ok) {
+                    alert('User unblocked');
+                    loadUsers();
+                    loadDashboardStats();
+                } else {
+                    alert('Failed to unblock user');
+                }
+            } catch (err) {
+                alert('Error');
+            }
+        }
+
+        function viewUserBehavior(userId) {
+            window.open(`/api/admin/user-behavior/${userId}`, '_blank');
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/admin/login';
+        }
+    </script>
+</body>
+</html>
